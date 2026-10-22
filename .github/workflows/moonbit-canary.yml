@@ -1,0 +1,84 @@
+name: MoonBit canary
+
+# Runs a repository's own gates on the newest upstream MoonBit release (latest)
+# and on the nightly toolchain, from the ghcr.io/gaato/moonbit images. A
+# failure here with a green CI means the language or toolchain changed under
+# the repository. Read the two channels differently:
+#   latest  - the release users install has moved: fix it, then bump the
+#             pinned toolchain in the repository's CI.
+#   nightly - an early warning of what the next release will do; nightly itself
+#             is sometimes broken, so confirm before changing anything.
+#
+# The caller owns the schedule. Put it after the images are rebuilt (11:17 UTC
+# for releases and 12:10 UTC for nightly in gaato/moonbit-docker).
+
+on:
+  workflow_call:
+    inputs:
+      gates:
+        description: Shell command, run from the repository root, that runs the same gates as CI.
+        required: true
+        type: string
+      setup:
+        description: Shell command run before the gates, e.g. installing apt packages.
+        required: false
+        type: string
+        default: ""
+      uv:
+        description: Install uv for gates that run Python tooling.
+        required: false
+        type: boolean
+        default: false
+      runs-on:
+        required: false
+        type: string
+        default: ubuntu-24.04
+      timeout-minutes:
+        required: false
+        type: number
+        default: 40
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: gates (${{ matrix.channel }})
+    runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [latest, nightly]
+    container:
+      # The images are based on node:24, so the js target needs no extra setup.
+      image: ghcr.io/gaato/moonbit:${{ matrix.channel }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Trust the workspace (container runs as a different user)
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Set up uv
+        if: ${{ inputs.uv }}
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+
+      - name: Toolchain versions
+        run: moon version --all
+
+      - name: Update registry index
+        run: moon update
+
+      - name: Set up
+        if: ${{ inputs.setup != '' }}
+        env:
+          SETUP: ${{ inputs.setup }}
+        run: bash -euo pipefail -c "$SETUP"
+
+      - name: Gates
+        env:
+          GATES: ${{ inputs.gates }}
+        run: bash -euo pipefail -c "$GATES"
