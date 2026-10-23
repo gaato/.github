@@ -17,10 +17,10 @@
   ],
   "customDatasources": {
     "mooncakes": {
-      "description": "Yanked versions are dropped. The registry dates only its latest version, so only that one carries a release timestamp.",
+      "description": "Yanked versions are dropped. The registry dates only its latest version, so only that one carries a release timestamp. The brackets keep a module with a single version an array; JSONata would otherwise unwrap it.",
       "defaultRegistryUrlTemplate": "https://mooncakes.io/api/v0/modules/{{packageName}}",
       "transformTemplates": [
-        "{\"releases\": versions[yanked = false].{\"version\": version, \"releaseTimestamp\": version = $$.version ? $$.metadata.created_at : undefined}, \"sourceUrl\": metadata.repository, \"homepage\": \"https://mooncakes.io/docs/\" & module}"
+        "{\"releases\": [versions[yanked = false].{\"version\": version, \"releaseTimestamp\": version = $$.version ? $$.metadata.created_at : undefined}], \"sourceUrl\": metadata.repository, \"homepage\": \"https://mooncakes.io/docs/\" & module}"
       ]
     }
   },
