@@ -1,6 +1,6 @@
 # gaato/.github
 
-Reusable GitHub Actions workflows shared by [gaato](https://github.com/gaato)'s repositories.
+Reusable GitHub Actions workflows and Renovate presets shared by [gaato](https://github.com/gaato)'s repositories.
 
 ## MoonBit canary
 
@@ -35,6 +35,18 @@ jobs:
 | `timeout-minutes` | `40` | Per channel. |
 
 Node.js 24 is already in the images. `moon update` runs before `setup`.
+
+## MoonBit dependencies in Renovate
+
+[`moonbit.json`](moonbit.json) teaches Renovate to update the `"owner/name@version"` imports in
+`moon.mod` from [mooncakes.io](https://mooncakes.io). Modules released from the same repository
+are updated in one PR.
+
+```json
+{
+  "extends": ["config:recommended", "github>gaato/.github:moonbit"]
+}
+```
 
 ## License
 

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Update MoonBit module imports in moon.mod from mooncakes.io; Renovate has no MoonBit manager of its own. Use it with \"extends\": [\"github>gaato/.github:moonbit\"].",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "moon.mod imports are \"owner/name@version\" strings. moon resolves them with minimal version selection, so the version is a floor and there is no lock file to refresh.",
+      "managerFilePatterns": [
+        "/(^|/)moon\\.mod$/"
+      ],
+      "matchStrings": [
+        "\"(?<depName>[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+)@(?<currentValue>[0-9][^\"]*)\""
+      ],
+      "datasourceTemplate": "custom.mooncakes",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "customDatasources": {
+    "mooncakes": {
+      "description": "Yanked versions are dropped. The registry dates only its latest version, so only that one carries a release timestamp.",
+      "defaultRegistryUrlTemplate": "https://mooncakes.io/api/v0/modules/{{packageName}}",
+      "transformTemplates": [
+        "{\"releases\": versions[yanked = false].{\"version\": version, \"releaseTimestamp\": version = $$.version ? $$.metadata.created_at : undefined}, \"sourceUrl\": metadata.repository, \"homepage\": \"https://mooncakes.io/docs/\" & module}"
+      ]
+    }
+  },
+  "packageRules": [
+    {
+      "description": "Modules released together from one repository (mbt-sdk, codecs.mbt) are usually only compatible at matching versions, so they move in one PR.",
+      "matchDatasources": [
+        "custom.mooncakes"
+      ],
+      "groupName": "{{#if sourceRepo}}{{{sourceRepo}}}{{else}}{{{depName}}}{{/if}} modules"
+    }
+  ]
+}
