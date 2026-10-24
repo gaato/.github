@@ -38,6 +38,11 @@ Node.js 24 is already in the images. `moon update` runs before `setup`.
 
 ## MoonBit dependencies in Renovate
 
+Upstream adoption and release preparation follow
+[MoonBit maintenance](docs/moonbit-maintenance.md). The preset below is an
+available dependency matcher; it does not replace reviewing upstream changes
+and improving the repositories that use them.
+
 [`moonbit.json`](moonbit.json) teaches Renovate to update the `"owner/name@version"` imports in
 `moon.mod` from [mooncakes.io](https://mooncakes.io). Modules released from the same repository
 are updated in one PR.
