@@ -39,7 +39,9 @@ Node.js 24 is already in the images. `moon update` runs before `setup`.
 ## MoonBit dependencies in Renovate
 
 Upstream adoption and release preparation follow
-[MoonBit maintenance](docs/moonbit-maintenance.md). The preset below is an
+[MoonBit maintenance](docs/moonbit-maintenance.md).
+[`moonbit-upstream-watch.yml`](.github/workflows/moonbit-upstream-watch.yml) opens the issue that
+starts a round once a new release has its image. The preset below is an
 available dependency matcher; it does not replace reviewing upstream changes
 and improving the repositories that use them.
 

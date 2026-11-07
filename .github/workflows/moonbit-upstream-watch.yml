@@ -1,0 +1,79 @@
+name: MoonBit upstream watch
+
+# Opens the issue that starts a round of docs/moonbit-maintenance.md when a new
+# MoonBit release can be reviewed. Without it, a release only shows up once a
+# canary turns red, and nobody owns looking at what the release offers.
+#
+# A release is reviewable once gaato/moonbit-docker has published its image,
+# because the review pins CI to that image. There is at most one open review
+# issue: a newer release retitles it rather than opening a second, since one
+# round always reviews the whole difference from the last reviewed release.
+# Closing the issue ends the round; a closed issue for the same release is not
+# reopened.
+
+on:
+  schedule:
+    # After moonbit-docker rebuilds release images (11:17 UTC).
+    - cron: "47 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Open or update the review issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          prefix='MoonBit upstream review: '
+
+          # moonc reports "v0.10.20+65efd5b93 (2026-11-05)".
+          version=$(curl --proto '=https' --tlsv1.2 -fsSL https://cli.moonbitlang.com/version.json \
+            | jq -r '.items[] | select(.name == "moonc") | .version' \
+            | sed -E 's/^v([^ ]+).*/\1/')
+          if ! [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[0-9a-f]+$ ]]; then
+            echo "::error::Unexpected moonc version: $version"
+            exit 1
+          fi
+
+          published=$(curl --proto '=https' --tlsv1.2 -fsSL \
+            https://raw.githubusercontent.com/gaato/moonbit-docker/main/versions.json \
+            | jq --arg v "$version" '[.[][]] | index($v) != null')
+          if [[ $published != true ]]; then
+            echo "$version has no ghcr.io/gaato/moonbit image yet."
+            exit 0
+          fi
+
+          # Search syntax would mangle the "+", so filter the titles locally.
+          issues=$(gh issue list -R "$REPO" --state all --limit 500 --json number,title,state)
+          title="$prefix$version"
+          if jq -e --arg t "$title" 'any(.[]; .title == $t)' <<< "$issues" > /dev/null; then
+            echo "A review issue for $version already exists."
+            exit 0
+          fi
+
+          image="ghcr.io/gaato/moonbit:${version/+/-}"
+          body=$(cat <<EOF
+          MoonBit \`$version\` is released and \`$image\` is published.
+
+          Follow [MoonBit maintenance](https://github.com/$REPO/blob/main/docs/moonbit-maintenance.md)
+          from the last reviewed release in [docs/reviews](https://github.com/$REPO/tree/main/docs/reviews),
+          and close this issue when the round's review is recorded.
+          EOF
+          )
+
+          open=$(jq -r --arg p "$prefix" \
+            '[.[] | select(.state == "OPEN" and (.title | startswith($p)))][0].number // empty' <<< "$issues")
+          if [[ -n $open ]]; then
+            gh issue edit "$open" -R "$REPO" --title "$title" --body "$body"
+            gh issue comment "$open" -R "$REPO" --body "Retitled for \`$version\`, released before this round closed."
+          else
+            gh issue create -R "$REPO" --title "$title" --body "$body"
+          fi
