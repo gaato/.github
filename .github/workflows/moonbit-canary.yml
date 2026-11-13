@@ -72,6 +72,26 @@ jobs:
       - name: Update registry index
         run: moon update
 
+      # MoonBit after 0.10.20 changes core/async in ways no single source
+      # follows on both toolchains: IO trait methods that 0.10.20 refuses,
+      # renamed functions. A repository keeps its code for the newer toolchain
+      # under compat/core_async_next, at the path the file takes in the tree
+      # with `.next` appended. On a toolchain whose IO traits have the new
+      # methods, this copies each one into place, adding a file or replacing
+      # the in-tree version; without compat/ it does nothing. gaato/mttp's own
+      # canary does the same. When the repository's pinned toolchain moves
+      # past 0.10.20, it moves the files into the tree and deletes compat/.
+      - name: Adopt compat/core_async_next on a toolchain that needs it
+        run: |
+          [ -d compat/core_async_next ] || exit 0
+          traits="${MOON_HOME:-$HOME/.moon}/lib/core/async/io/pkg.generated.mbti"
+          grep -q 'fn name(Self) -> String' "$traits" || exit 0
+          cd compat/core_async_next
+          find . -name '*.mbt.next' | while read -r next; do
+            cp "$next" "../../${next%.next}"
+            echo "adopted ${next%.next}"
+          done
+
       - name: Set up
         if: ${{ inputs.setup != '' }}
         env:
