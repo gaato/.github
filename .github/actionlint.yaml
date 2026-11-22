@@ -1,0 +1,7 @@
+self-hosted-runner:
+  # GitHub-hosted labels newer than the actionlint release in CI; without them
+  # every job on these runners fails the lint. Drop a label once actionlint
+  # reports it as known.
+  labels:
+    - ubuntu-26.04
+    - ubuntu-26.04-arm
