@@ -31,10 +31,10 @@ jobs:
 | `gates` | (required) | Command run from the repository root. Use the same entrypoint as CI, so the two cannot drift apart. |
 | `setup` | `""` | Command run before the gates, e.g. `apt-get update && apt-get install -y --no-install-recommends jq`. |
 | `uv` | `false` | Install [uv](https://docs.astral.sh/uv/). |
-| `runs-on` | `ubuntu-24.04` | Runner label. |
+| `runs-on` | `ubuntu-26.04` | Runner label. |
 | `timeout-minutes` | `40` | Per channel. |
 
-Node.js 24 is already in the images. `moon update` runs before `setup`.
+Node.js is already in the images. `moon update` runs before `setup`.
 
 ## MoonBit dependencies in Renovate
 

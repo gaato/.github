@@ -26,6 +26,27 @@
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": false
+    },
+    {
+      "description": "Move every runner label in one pull request, so the canary default and its README entry stay equal.",
+      "matchDatasources": [
+        "github-runners"
+      ],
+      "groupName": "GitHub runners"
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "Runner labels that the github-actions manager misses: the canary's runs-on default and the README table that documents it",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/",
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "(?:default: |`)(?<depName>ubuntu)-(?<currentValue>\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "github-runners"
     }
   ]
 }
